@@ -21,5 +21,8 @@ func StartServer(cf *config.HttpConfig) {
 }
 
 func request(ctx *fasthttp.RequestCtx) {
-	log.Println(ctx.Path())
+
+	log.Printf("request path:%q\n", ctx.Path())
+	log.Printf("Headers:\n%s\n", ctx.Request.Header.Header())
+	log.Printf("Body:%v\n\n\n", ctx.Request.Body())
 }
