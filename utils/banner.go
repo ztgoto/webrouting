@@ -1,12 +1,8 @@
-package main
+package utils
 
-import "fmt"
-
-// "log"
-// "runtime"
-
-// "github.com/ztgoto/webrouting/config"
-// server "github.com/ztgoto/webrouting/http"
+import (
+	"fmt"
+)
 
 const banner string = `
 
@@ -19,16 +15,7 @@ const banner string = `
 
 `
 
-// func init() {
-// 	cpuNum := runtime.NumCPU()
-// 	log.Printf("CPU Num:%d\r\n", cpuNum)
-
-// 	runtime.GOMAXPROCS(config.SC.MaxProcs)
-// 	log.Printf("GOMAXPROCS:%d\r\n", config.SC.MaxProcs)
-// }
-
-func main() {
-	// log.Println(config.ServerConfig)
-	// server.StartServer(&config.ServerConfig)
+// PrintBanner 打印Banner标记
+func PrintBanner() {
 	fmt.Println(banner)
 }
