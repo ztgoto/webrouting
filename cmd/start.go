@@ -14,23 +14,35 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"github.com/ztgoto/webrouting/config"
+	"github.com/ztgoto/webrouting/http"
 )
 
-// stopCmd represents the stop command
-var stopCmd = &cobra.Command{
+// startCmd represents the start command
+var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "start server",
 	Long:  `start http routing server`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("start called")
+		err := config.LoadConf()
+		if err != nil {
+			panic(err)
+		}
+		config.PrepareSetting()
+		http.StartServer(config.AppConf)
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(stopCmd)
+	RootCmd.AddCommand(startCmd)
+
+	startCmd.Flags().StringVarP(&config.ConfPath, "config", "f", config.DefaultConfPath, "http server config file path")
+
+	// startCmd.Flags().IntVarP(&config.SysConf.MaxProcs, "proces", "c", runtime.NumCPU(), "system max proces")
+
+	// startCmd.Flags().StringVarP(&config.HTTPConf.Addr, "listen", "l", config.DefaultAddr, "http server listen addr")
+	// startCmd.Flags().BoolVarP(&config.HTTPConf.Vhost, "vhost", "v", config.DefaultVhost, "http server vhost")
 
 	// Here you will define your flags and configuration settings.
 

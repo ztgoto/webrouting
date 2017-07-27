@@ -18,11 +18,12 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/ztgoto/webrouting/config"
 )
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "webrouting",
+	Use:   config.AppName,
 	Short: "http routing",
 	Long:  `Http application layer routing`,
 	// Uncomment the following line if your bare application
