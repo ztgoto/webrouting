@@ -1,9 +1,6 @@
 package http
 
 import (
-	"log"
-
-	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
 )
 
@@ -11,13 +8,13 @@ import (
 func StartServer(cf *config.AppConfig) {
 
 	// Start HTTP server.
-	if len((*cf).Addr) > 0 {
+	// if len((*cf).Addr) > 0 {
 
-		log.Printf("Starting HTTP server on %q", (*cf).Addr)
-		if err := fasthttp.ListenAndServe((*cf).Addr, RootHandler); err != nil {
-			log.Fatalf("error in ListenAndServe: %s", err)
-		}
+	// 	log.Printf("Starting HTTP server on %q", (*cf).Addr)
+	// 	if err := fasthttp.ListenAndServe((*cf).Addr, RootHandler); err != nil {
+	// 		log.Fatalf("error in ListenAndServe: %s", err)
+	// 	}
 
-	}
+	// }
 
 }

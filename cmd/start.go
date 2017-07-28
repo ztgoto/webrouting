@@ -25,11 +25,10 @@ var startCmd = &cobra.Command{
 	Short: "start server",
 	Long:  `start http routing server`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := config.LoadConf()
+		err := config.PrepareSetting()
 		if err != nil {
 			panic(err)
 		}
-		config.PrepareSetting()
 		http.StartServer(config.AppConf)
 	},
 }
