@@ -29,7 +29,7 @@ var startCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		http.StartServer(config.AppConf)
+		http.StartServer()
 	},
 }
 

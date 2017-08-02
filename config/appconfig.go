@@ -119,7 +119,6 @@ func PrepareSetting() error {
 func resolverHTTPServer() error {
 	httpServers := AppConf.HTTP.Servers
 	if ListenServerList == nil {
-		httpServers := AppConf.HTTP.Servers
 		ListenServerList = make(map[string]*ServerData, len(httpServers))
 	}
 	for _, server := range httpServers {
@@ -136,6 +135,24 @@ func resolverHTTPServer() error {
 			v.SSL = server.SSL
 			v.CertFile = server.CertFile
 			v.KeyFile = server.KeyFile
+			rules := v.Rules
+			sloc := server.Locations
+			if rules == nil {
+				rules = make(map[string][]LocationConfig, len(names))
+			}
+			for _, name := range names {
+				nname := utils.SpaceRegexp.ReplaceAllString(name, "")
+				if len(nname) == 0 {
+					continue
+				}
+				if sv, sok := rules[nname]; sok {
+					ml := mergeLocations(sv, sloc)
+					rules[nname] = ml
+				} else {
+					ml := mergeLocations(sloc, nil)
+					rules[nname] = ml
+				}
+			}
 
 		} else {
 			s := &ServerData{
@@ -145,13 +162,12 @@ func resolverHTTPServer() error {
 				KeyFile:  server.KeyFile,
 			}
 
-			var rules map[string][]LocationConfig
+			rules := make(map[string][]LocationConfig, len(names))
+			ml := mergeLocations(server.Locations, nil)
 			for _, name := range names {
-				if len(name) > 0 {
-					if rules == nil {
-						rules = make(map[string][]LocationConfig, len(names))
-					}
-					rules[name] = server.Locations
+				nname := utils.SpaceRegexp.ReplaceAllString(name, "")
+				if len(nname) > 0 {
+					rules[nname] = ml
 				}
 			}
 			s.Rules = rules
