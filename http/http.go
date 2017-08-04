@@ -31,10 +31,15 @@ func StartServer() {
 
 // AddServer 添加启动http服务
 func AddServer(sf *config.ServerData) (e error) {
+	c := &ServerContext{
+		Data: sf,
+		K:    "root",
+		h:    HandlerFun(DefaultHandle),
+	}
 	if sf.SSL {
-		e = fasthttp.ListenAndServeTLS(sf.Listen, sf.CertFile, sf.KeyFile, RootHandler)
+		e = fasthttp.ListenAndServeTLS(sf.Listen, sf.CertFile, sf.KeyFile, c.RequestHandler)
 	} else {
-		e = fasthttp.ListenAndServe(sf.Listen, RootHandler)
+		e = fasthttp.ListenAndServe(sf.Listen, c.RequestHandler)
 	}
 	return
 }
