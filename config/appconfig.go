@@ -2,13 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io/ioutil"
 	"runtime"
-	"strings"
-
-	"github.com/ztgoto/webrouting/utils"
 )
 
 // AppConfig 系统配置
@@ -21,6 +16,8 @@ type AppConfig struct {
 // UpStreamConfig 后端服务配置
 type UpStreamConfig struct {
 	Algorithm string         `json:"algorithm"`
+	Timeout   int64          `json:"timeout"`
+	Retries   int            `json:"retries"`
 	Servers   []StreamConfig `json:"servers"`
 }
 
@@ -28,6 +25,7 @@ type UpStreamConfig struct {
 type StreamConfig struct {
 	Addr   string `json:"addr"`
 	Status int    `json:"status"`
+	Weight int    `json:"weight"`
 }
 
 // HTTPConfig  http model config
@@ -55,15 +53,6 @@ type LocationConfig struct {
 	ResponseHeaders map[string]string `json:"response_headers"`
 }
 
-// ServerData 用于存储解析后的数据信息
-type ServerData struct {
-	Listen   string
-	SSL      bool
-	CertFile string
-	KeyFile  string
-	Rules    map[string][]LocationConfig
-}
-
 const (
 	// DefaultConfPath 默认配置文件路径
 	DefaultConfPath = "./conf/webrouting.conf"
@@ -75,9 +64,6 @@ var (
 
 	// ConfPath 配置文件路径
 	ConfPath = DefaultConfPath
-
-	// ListenServerList 解析处理后的HTTP服务配置
-	ListenServerList map[string]*ServerData
 )
 
 func init() {
@@ -97,137 +83,4 @@ func LoadConf() error {
 		return err
 	}
 	return nil
-}
-
-// PrepareSetting 初始设置
-func PrepareSetting() error {
-	err := LoadConf()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("%+v\n", AppConf)
-	runtime.GOMAXPROCS(AppConf.MaxProcs)
-
-	err = resolverHTTPServer()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// resolverHTTPServer 处理解析HTTP服务信息
-func resolverHTTPServer() error {
-	httpServers := AppConf.HTTP.Servers
-	if ListenServerList == nil {
-		ListenServerList = make(map[string]*ServerData, len(httpServers))
-	}
-	for _, server := range httpServers {
-		fmt.Println(server)
-		listen := utils.SpaceRegexp.ReplaceAllString(server.Listen, "")
-		if len(listen) == 0 {
-			return errors.New("http.servers.listen is empty")
-		}
-
-		sname := utils.SpaceRegexp.ReplaceAllString(server.ServerName, "")
-		names := strings.Split(sname, ",")
-
-		if v, ok := ListenServerList[listen]; ok {
-			v.SSL = server.SSL
-			v.CertFile = server.CertFile
-			v.KeyFile = server.KeyFile
-			rules := v.Rules
-			sloc := server.Locations
-			if rules == nil {
-				rules = make(map[string][]LocationConfig, len(names))
-			}
-			for _, name := range names {
-				nname := utils.SpaceRegexp.ReplaceAllString(name, "")
-				if len(nname) == 0 {
-					continue
-				}
-				if sv, sok := rules[nname]; sok {
-					ml := mergeLocations(sv, sloc)
-					rules[nname] = ml
-				} else {
-					ml := mergeLocations(sloc, nil)
-					rules[nname] = ml
-				}
-			}
-
-		} else {
-			s := &ServerData{
-				Listen:   listen,
-				SSL:      server.SSL,
-				CertFile: server.CertFile,
-				KeyFile:  server.KeyFile,
-			}
-
-			rules := make(map[string][]LocationConfig, len(names))
-			ml := mergeLocations(server.Locations, nil)
-			for _, name := range names {
-				nname := utils.SpaceRegexp.ReplaceAllString(name, "")
-				if len(nname) > 0 {
-					rules[nname] = ml
-				}
-			}
-			s.Rules = rules
-			ListenServerList[listen] = s
-		}
-
-	}
-
-	fmt.Printf("%+v\n", ListenServerList)
-	return nil
-}
-
-// mergeLocations 合并Location 信息
-// 将s2合并到s1
-func mergeLocations(s1, s2 []LocationConfig) []LocationConfig {
-	cap := len(s1) + len(s2)
-	if cap == 0 {
-		return nil
-	}
-	result := make([]LocationConfig, 0, cap)
-	ut := make(map[string]int, cap)
-
-	for _, s := range s1 {
-		pattern := strings.TrimSpace(s.Pattern)
-		if len(pattern) == 0 {
-			panic("pattern is empty")
-		}
-		if index, ok := ut[pattern]; ok {
-			lc := result[index]
-			mapCopy(lc.RequestHeaders, s.RequestHeaders)
-			mapCopy(lc.ResponseHeaders, s.ResponseHeaders)
-		} else {
-			result = append(result, s)
-			ut[pattern] = len(result) - 1
-		}
-	}
-
-	for _, s := range s2 {
-		pattern := strings.TrimSpace(s.Pattern)
-		if len(pattern) == 0 {
-			panic("pattern is empty")
-		}
-		if index, ok := ut[pattern]; ok {
-			lc := result[index]
-			mapCopy(lc.RequestHeaders, s.RequestHeaders)
-			mapCopy(lc.ResponseHeaders, s.ResponseHeaders)
-		} else {
-			result = append(result, s)
-			ut[pattern] = len(result) - 1
-		}
-	}
-
-	return result
-}
-
-// mapCopy map拷贝
-func mapCopy(target, source map[string]string) {
-	if target != nil && source != nil {
-		for k, v := range source {
-			target[k] = v
-		}
-	}
 }
