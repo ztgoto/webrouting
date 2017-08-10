@@ -17,6 +17,8 @@ import (
 	"log"
 	"runtime"
 
+	"github.com/ztgoto/webrouting/utils"
+
 	"github.com/spf13/cobra"
 	"github.com/ztgoto/webrouting/config"
 	"github.com/ztgoto/webrouting/http"
@@ -28,6 +30,7 @@ var startCmd = &cobra.Command{
 	Short: "start server",
 	Long:  `start http routing server`,
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.PrintBanner()
 		err := config.LoadConf()
 		if err != nil {
 			panic(err)

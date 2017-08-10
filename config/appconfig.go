@@ -8,9 +8,10 @@ import (
 
 // AppConfig 系统配置
 type AppConfig struct {
-	MaxProcs  int                       `json:"max_procs"`
-	UpStreams map[string]UpStreamConfig `json:"upstreams"`
-	HTTP      HTTPConfig                `json:"http"`
+	MaxProcs     int                       `json:"max_procs"`
+	RecoverCheck bool                      `json:"recover_check"`
+	UpStreams    map[string]UpStreamConfig `json:"upstreams"`
+	HTTP         HTTPConfig                `json:"http"`
 }
 
 // UpStreamConfig 后端服务配置
@@ -24,7 +25,6 @@ type UpStreamConfig struct {
 // StreamConfig 路由列表配置
 type StreamConfig struct {
 	Addr   string `json:"addr"`
-	Status int    `json:"status"`
 	Weight int    `json:"weight"`
 }
 

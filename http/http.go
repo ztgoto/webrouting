@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
@@ -27,6 +29,8 @@ var (
 	Key = "root"
 	// ListenServerList 解析处理后的HTTP服务配置
 	ListenServerList map[string]*ServerData
+	// RoutingList 路由列表
+	RoutingList map[string]*Streams
 )
 
 // StartServer 启动http服务
@@ -64,9 +68,63 @@ func AddServer(sf *ServerData) (e error) {
 // PrepareSetting 初始设置
 func PrepareSetting() error {
 
-	err := resolverHTTPServer()
+	err := reaolverStream()
 	if err != nil {
 		return err
+	}
+	if config.AppConf.RecoverCheck {
+		go recoverCheck()
+	}
+	err = resolverHTTPServer()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func recoverCheck() {
+	for true {
+		for _, v := range RoutingList {
+			streams := v.Up
+			for _, s := range streams {
+				if s.Status == 0 {
+					log.Printf("check connection[%s]\n", s.Addr)
+					_, e := net.DialTimeout("tcp", s.Addr, time.Duration(config.DefaultTCPTimeout)*time.Millisecond)
+					if e == nil {
+						log.Printf("check connection[%s] recovered\n", s.Addr)
+						s.Status = 1
+					}
+				}
+			}
+		}
+		time.Sleep(3 * time.Second)
+	}
+
+}
+
+// reaolverStream 解析路由列表
+func reaolverStream() error {
+	upstreams := config.AppConf.UpStreams
+	if RoutingList == nil {
+		RoutingList = make(map[string]*Streams, len(upstreams))
+	}
+	for k, v := range upstreams {
+		streams := &Streams{
+			Algorithm: v.Algorithm,
+			Timeout:   v.Timeout,
+			Retries:   v.Retries,
+		}
+		list := v.Servers
+		upList := make([]*Stream, len(list))
+		for i, val := range list {
+			upList[i] = &Stream{
+				Addr:   val.Addr,
+				Weight: val.Weight,
+				Status: 1,
+			}
+		}
+		streams.Up = upList
+		RoutingList[k] = streams
 	}
 	return nil
 }
@@ -78,7 +136,7 @@ func resolverHTTPServer() error {
 		ListenServerList = make(map[string]*ServerData, len(httpServers))
 	}
 	for _, server := range httpServers {
-		log.Println(server)
+		// log.Println(server)
 		listen := utils.SpaceRegexp.ReplaceAllString(server.Listen, "")
 		if len(listen) == 0 {
 			return errors.New("http.servers.listen is empty")
@@ -151,7 +209,7 @@ func resolverHTTPServer() error {
 
 	}
 
-	log.Printf("%+v\n", ListenServerList)
+	// log.Printf("%+v\n", ListenServerList)
 	return nil
 }
 
@@ -173,9 +231,10 @@ func createRequestMapping(lc *config.LocationConfig) (*RequestMapping, error) {
 	}
 	if len(proxyPass) > 0 {
 
-		if v, ok := config.AppConf.UpStreams[proxyPass]; ok {
+		if v, ok := RoutingList[proxyPass]; ok {
+
 			h := &DefaultRoutingHandler{
-				RoutingCnf:      &v,
+				Routing:         v,
 				RequestHeaders:  lc.RequestHeaders,
 				ResponseHeaders: lc.ResponseHeaders,
 			}

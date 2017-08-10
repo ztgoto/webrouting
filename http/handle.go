@@ -8,7 +8,10 @@ import (
 	"math/rand"
 	"net"
 	"regexp"
+	"sync"
 	"time"
+
+	"github.com/ztgoto/webrouting/utils"
 
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
@@ -61,16 +64,32 @@ func (h *DefaultFileHandler) Handle(c context.Context, ctx *fasthttp.RequestCtx)
 	return nil
 }
 
+// Stream 服务
+type Stream struct {
+	Addr   string
+	Weight int
+	Status int
+}
+
+// Streams 服务列表
+type Streams struct {
+	Algorithm string
+	Timeout   int64
+	Retries   int
+	Up        []*Stream
+	Lock      sync.RWMutex
+}
+
 // DefaultRoutingHandler 默认代理路由分发
 type DefaultRoutingHandler struct {
-	RoutingCnf      *config.UpStreamConfig
+	Routing         *Streams
 	RequestHeaders  map[string]string
 	ResponseHeaders map[string]string
 }
 
 // Handle 默认路由处理器
 func (h *DefaultRoutingHandler) Handle(c context.Context, ctx *fasthttp.RequestCtx) error {
-	conn, e := h.randomConnection()
+	conn, e := h.getConnection()
 	if e != nil {
 		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
 		ctx.Response.SetBodyString("Bad Gateway")
@@ -92,30 +111,37 @@ func (h *DefaultRoutingHandler) Handle(c context.Context, ctx *fasthttp.RequestC
 	return nil
 }
 
-func (h *DefaultRoutingHandler) randomConnection() (net.Conn, error) {
-	algorithm := h.RoutingCnf.Algorithm
-	servers := h.RoutingCnf.Servers
+func (h *DefaultRoutingHandler) getConnection() (net.Conn, error) {
+	algorithm := h.Routing.Algorithm
+	servers := h.Routing.Up
 	timeout := time.Duration(config.DefaultTCPTimeout)
 	retries := config.DefaultTCPRetries
-	if h.RoutingCnf.Timeout > 0 {
-		timeout = time.Duration(h.RoutingCnf.Timeout)
+	if h.Routing.Timeout > 0 {
+		timeout = time.Duration(h.Routing.Timeout)
 	}
 
-	if h.RoutingCnf.Retries > 0 {
-		retries = h.RoutingCnf.Retries
+	if h.Routing.Retries > 0 {
+		retries = h.Routing.Retries
 	}
 
 	if len(servers) == 0 {
 		return nil, errors.New("server list is empty")
 	}
 	if algorithm == "random" {
-		index := rand.Intn(len(servers))
-		uc := servers[index]
-		if uc.Status == 1 {
+		// 存在并发问题
+		for true {
+			list := getOkAddr(servers)
+			l := len(list)
+			if l == 0 {
+				return nil, errors.New("server exception")
+			}
+			index := rand.Intn(l)
+			key := list[index]
+			server := servers[key]
 			for i := 0; i < retries+1; i++ {
-				log.Printf("random connection addr:%s\n", uc.Addr)
-				conn, e := net.DialTimeout("tcp", uc.Addr, timeout*time.Millisecond)
-				// 该处应该连接失败后对该服务器做故障排除处理(暂未实现)
+				log.Printf("random connection addr:%s\n", server.Addr)
+				conn, e := net.DialTimeout("tcp", server.Addr, timeout*time.Millisecond)
+
 				if e != nil {
 					log.Println(e)
 					continue
@@ -123,23 +149,34 @@ func (h *DefaultRoutingHandler) randomConnection() (net.Conn, error) {
 
 				return conn, e
 			}
+			servers[key].Status = 0
 
 		}
 
 	}
+
 	return nil, errors.New("server exception")
+}
+
+func getOkAddr(list []*Stream) []int {
+	oks := make([]int, 0, len(list))
+	for i, v := range list {
+		if v.Status == 1 {
+			oks = append(oks, i)
+		}
+	}
+	return oks
 }
 
 var (
 	// RegexpCache 正则匹配缓存对象
-	RegexpCache = make(map[string]*regexp.Regexp, 32)
+	RegexpCache = utils.NewConcurrentMap(32)
 )
 
 // DefaultHandle 基础http请求处理器
 func DefaultHandle(c context.Context, ctx *fasthttp.RequestCtx) error {
 
 	cf := c.Value(Key).(*ServerData)
-	log.Printf("%+v\n", cf)
 	host, _, e := net.SplitHostPort(string(ctx.Request.Host()))
 
 	if e != nil {
@@ -160,11 +197,11 @@ func DefaultHandle(c context.Context, ctx *fasthttp.RequestCtx) error {
 	for _, rule := range rules {
 		pattern := rule.Pattern
 		var reg *regexp.Regexp
-		if v, ok := RegexpCache[pattern]; ok {
-			reg = v
+		if v := RegexpCache.Get(pattern); v != nil {
+			reg = v.(*regexp.Regexp)
 		} else {
 			reg = regexp.MustCompile(pattern)
-			RegexpCache[pattern] = reg
+			RegexpCache.Put(pattern, reg)
 		}
 		if reg.MatchString(path) {
 			e := rule.h.Handle(nil, ctx)
