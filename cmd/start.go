@@ -36,6 +36,7 @@ var startCmd = &cobra.Command{
 			panic(err)
 		}
 		log.Printf("%+v\n", config.AppConf)
+
 		runtime.GOMAXPROCS(config.AppConf.MaxProcs)
 		err = http.PrepareSetting()
 		if err != nil {

@@ -8,10 +8,11 @@ import (
 
 // AppConfig 系统配置
 type AppConfig struct {
-	MaxProcs     int                       `json:"max_procs"`
-	RecoverCheck bool                      `json:"recover_check"`
-	UpStreams    map[string]UpStreamConfig `json:"upstreams"`
-	HTTP         HTTPConfig                `json:"http"`
+	MaxProcs      int                       `json:"max_procs"`
+	RecoverCheck  bool                      `json:"recover_check"`
+	CheckInterval int64                     `json:"recover_check"`
+	UpStreams     map[string]UpStreamConfig `json:"upstreams"`
+	HTTP          HTTPConfig                `json:"http"`
 }
 
 // UpStreamConfig 后端服务配置

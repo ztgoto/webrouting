@@ -83,6 +83,10 @@ func PrepareSetting() error {
 }
 
 func recoverCheck() {
+	interval := time.Duration(config.DefaultCheckInterval)
+	if config.AppConf.CheckInterval > 0 {
+		interval = time.Duration(config.AppConf.CheckInterval)
+	}
 	for true {
 		for _, v := range RoutingList {
 			streams := v.Up
@@ -97,7 +101,7 @@ func recoverCheck() {
 				}
 			}
 		}
-		time.Sleep(3 * time.Second)
+		time.Sleep(interval * time.Millisecond)
 	}
 
 }
