@@ -2,7 +2,6 @@ package http
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"log"
 	"math/rand"
@@ -19,14 +18,14 @@ import (
 
 // Handler 处理器
 type Handler interface {
-	Handle(c context.Context, ctx *fasthttp.RequestCtx) error
+	Handle(c interface{}, ctx *fasthttp.RequestCtx) error
 }
 
 // HandlerFun 处理函数
-type HandlerFun func(c context.Context, ctx *fasthttp.RequestCtx) error
+type HandlerFun func(c interface{}, ctx *fasthttp.RequestCtx) error
 
 // Handle 处理器
-func (f HandlerFun) Handle(c context.Context, ctx *fasthttp.RequestCtx) error {
+func (f HandlerFun) Handle(c interface{}, ctx *fasthttp.RequestCtx) error {
 	e := f(c, ctx)
 	return e
 }
@@ -40,8 +39,8 @@ type ServerContext struct {
 
 // RequestHandler 数据处理
 func (s *ServerContext) RequestHandler(ctx *fasthttp.RequestCtx) {
-	c := context.WithValue(context.Background(), s.Key, s.Data)
-	e := s.h.Handle(c, ctx)
+	// c := context.WithValue(context.Background(), s.Key, s.Data)
+	e := s.h.Handle(s.Data, ctx)
 	if e != nil {
 		log.Println(e)
 	}
@@ -59,7 +58,7 @@ type DefaultFileHandler struct {
 }
 
 // Handle 默认文件处理器
-func (h *DefaultFileHandler) Handle(c context.Context, ctx *fasthttp.RequestCtx) error {
+func (h *DefaultFileHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) error {
 	h.handler(ctx)
 	return nil
 }
@@ -88,7 +87,7 @@ type DefaultRoutingHandler struct {
 }
 
 // Handle 默认路由处理器
-func (h *DefaultRoutingHandler) Handle(c context.Context, ctx *fasthttp.RequestCtx) error {
+func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) error {
 	conn, e := h.getConnection()
 	if e != nil {
 		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
@@ -174,9 +173,9 @@ var (
 )
 
 // DefaultHandle 基础http请求处理器
-func DefaultHandle(c context.Context, ctx *fasthttp.RequestCtx) error {
+func DefaultHandle(c interface{}, ctx *fasthttp.RequestCtx) error {
 
-	cf := c.Value(Key).(*ServerData)
+	cf := c.(*ServerData)
 	host, _, e := net.SplitHostPort(string(ctx.Request.Host()))
 
 	if e != nil {
