@@ -16,6 +16,8 @@ import (
 	"github.com/ztgoto/webrouting/config"
 )
 
+// "net/http" type Transport
+
 // Handler 处理器
 type Handler interface {
 	Handle(c interface{}, ctx *fasthttp.RequestCtx) error
