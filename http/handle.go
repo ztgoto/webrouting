@@ -102,9 +102,29 @@ func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) 
 		ctx.Request.Header.Set(k, v)
 	}
 
-	ctx.Request.WriteTo(conn)
+	n, err := ctx.Request.WriteTo(conn)
+	// 测试
+	log.Printf("WriteTo Length:%d\n", n)
+	if err != nil {
+		log.Println(err)
+	}
 
-	ctx.Response.Read(bufio.NewReader(conn))
+	// f, err := os.Create("C:\\Users\\rax\\Desktop\\testhttp.txt")
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// defer f.Close()
+
+	// n1, err1 := ctx.Request.WriteTo(f)
+	// if err1 != nil {
+	// 	log.Println(err1)
+	// }
+	// log.Printf("WriteTo FileLength:%d\n", n1)
+
+	err = ctx.Response.Read(bufio.NewReader(conn))
+	if err != nil {
+		log.Println(err)
+	}
 	for k, v := range h.ResponseHeaders {
 		ctx.Response.Header.Set(k, v)
 	}

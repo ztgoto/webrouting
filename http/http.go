@@ -72,6 +72,7 @@ func PrepareSetting() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("%+v\n", config.AppConf.RecoverCheck)
 	if config.AppConf.RecoverCheck {
 		go recoverCheck()
 	}
@@ -89,6 +90,7 @@ func recoverCheck() {
 	}
 	for true {
 		for _, v := range RoutingList {
+			log.Printf("%+v\n", v)
 			streams := v.Up
 			for _, s := range streams {
 				if s.Status == 0 {
