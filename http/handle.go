@@ -1,7 +1,7 @@
 package http
 
 import (
-	"bufio"
+	// "bufio"
 	"errors"
 	"log"
 	"math/rand"
@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ztgoto/webrouting/utils"
-
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
 )
@@ -78,6 +77,7 @@ type Streams struct {
 	Timeout   int64
 	Retries   int
 	Up        []*Stream
+	Clints    []*fasthttp.HostClient
 	Lock      sync.RWMutex
 }
 
@@ -90,24 +90,24 @@ type DefaultRoutingHandler struct {
 
 // Handle 默认路由处理器
 func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) error {
-	conn, e := h.getConnection()
-	if e != nil {
-		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
-		ctx.Response.SetBodyString("Bad Gateway")
-		return e
-	}
-	defer conn.Close()
+	// conn, e := h.getConnection()
+	// if e != nil {
+	// 	ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
+	// 	ctx.Response.SetBodyString("Bad Gateway")
+	// 	return e
+	// }
+	// defer conn.Close()
 
-	for k, v := range h.RequestHeaders {
-		ctx.Request.Header.Set(k, v)
-	}
+	// for k, v := range h.RequestHeaders {
+	// 	ctx.Request.Header.Set(k, v)
+	// }
 
-	n, err := ctx.Request.WriteTo(conn)
-	// 测试
-	log.Printf("WriteTo Length:%d\n", n)
-	if err != nil {
-		log.Println(err)
-	}
+	// n, err := ctx.Request.WriteTo(conn)
+	// // 测试
+	// log.Printf("WriteTo Length:%d\n", n)
+	// if err != nil {
+	// 	log.Println(err)
+	// }
 
 	// f, err := os.Create("C:\\Users\\rax\\Desktop\\testhttp.txt")
 	// if err != nil {
@@ -121,9 +121,47 @@ func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) 
 	// }
 	// log.Printf("WriteTo FileLength:%d\n", n1)
 
-	err = ctx.Response.Read(bufio.NewReader(conn))
-	if err != nil {
-		log.Println(err)
+	// err = ctx.Response.Read(bufio.NewReader(conn))
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// for k, v := range h.ResponseHeaders {
+	// 	ctx.Response.Header.Set(k, v)
+	// }
+
+	algorithm := h.Routing.Algorithm
+	clients := h.Routing.Clints
+	timeout := time.Duration(config.DefaultTCPTimeout)
+	
+	if h.Routing.Timeout > 0 {
+		timeout = time.Duration(h.Routing.Timeout)
+	}
+
+	if len(clients) == 0 {
+		return errors.New("server list is empty")
+	}
+
+	client:=clients[0]
+	if algorithm == "random" {
+		l := len(clients)
+		index := rand.Intn(l)
+		client = clients[index]
+	}
+
+	// Reset 'Connection: close' request header in order to prevent
+	// from closing keep-alive connections to -out servers.
+	ctx.Request.Header.ResetConnectionClose()
+
+	for k, v := range h.RequestHeaders {
+		ctx.Request.Header.Set(k, v)
+	}
+
+	e := client.DoTimeout(&ctx.Request, &ctx.Response, timeout*time.Millisecond)
+
+	if e != nil {
+		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
+		ctx.Response.SetBodyString("Bad Gateway")
+		return e
 	}
 	for k, v := range h.ResponseHeaders {
 		ctx.Response.Header.Set(k, v)
