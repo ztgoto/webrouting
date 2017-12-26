@@ -170,7 +170,7 @@ func (h *DefaultRoutingHandler) getConnection() (net.Conn, error) {
 
 				return conn, e
 			}
-			servers[key].Status = 0
+			// servers[key].Status = 0
 
 		}
 
