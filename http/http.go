@@ -73,9 +73,9 @@ func PrepareSetting() error {
 		return err
 	}
 	log.Printf("%+v\n", config.AppConf.RecoverCheck)
-	if config.AppConf.RecoverCheck {
-		go recoverCheck()
-	}
+	// if config.AppConf.RecoverCheck {
+	// 	go recoverCheck()
+	// }
 	err = resolverHTTPServer()
 	if err != nil {
 		return err
@@ -122,14 +122,24 @@ func reaolverStream() error {
 		}
 		list := v.Servers
 		upList := make([]*Stream, len(list))
+		clients := make([]*fasthttp.HostClient,len(list))
 		for i, val := range list {
 			upList[i] = &Stream{
 				Addr:   val.Addr,
 				Weight: val.Weight,
 				Status: 1,
 			}
+			clients[i] = &fasthttp.HostClient{
+				Addr:           val.Addr,
+				Dial:           fasthttp.Dial,
+				// MaxConns:       connsPerAddr,
+				ReadTimeout:    120 * time.Second,
+				WriteTimeout:   5 * time.Second,
+				// ReadBufferSize: *outMaxHeaderSize,
+			}
 		}
 		streams.Up = upList
+		streams.Clints = clients
 		RoutingList[k] = streams
 	}
 	return nil
