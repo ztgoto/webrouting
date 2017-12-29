@@ -122,7 +122,7 @@ func reaolverStream() error {
 		}
 		list := v.Servers
 		upList := make([]*Stream, len(list))
-		clients := make([]*fasthttp.HostClient,len(list))
+		clients := make([]*fasthttp.HostClient, len(list))
 		for i, val := range list {
 			upList[i] = &Stream{
 				Addr:   val.Addr,
@@ -130,11 +130,11 @@ func reaolverStream() error {
 				Status: 1,
 			}
 			clients[i] = &fasthttp.HostClient{
-				Addr:           val.Addr,
-				Dial:           fasthttp.Dial,
+				Addr: val.Addr,
+				Dial: fasthttp.Dial,
 				// MaxConns:       connsPerAddr,
-				ReadTimeout:    120 * time.Second,
-				WriteTimeout:   5 * time.Second,
+				ReadTimeout:  120 * time.Second,
+				WriteTimeout: 5 * time.Second,
 				// ReadBufferSize: *outMaxHeaderSize,
 			}
 		}

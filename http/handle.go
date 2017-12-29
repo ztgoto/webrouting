@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ztgoto/webrouting/utils"
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
+	"github.com/ztgoto/webrouting/utils"
 )
 
 // "net/http" type Transport
@@ -132,7 +132,7 @@ func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) 
 	algorithm := h.Routing.Algorithm
 	clients := h.Routing.Clints
 	timeout := time.Duration(config.DefaultTCPTimeout)
-	
+
 	if h.Routing.Timeout > 0 {
 		timeout = time.Duration(h.Routing.Timeout)
 	}
@@ -141,7 +141,7 @@ func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) 
 		return errors.New("server list is empty")
 	}
 
-	client:=clients[0]
+	client := clients[0]
 	if algorithm == "random" {
 		l := len(clients)
 		index := rand.Intn(l)
@@ -161,6 +161,7 @@ func (h *DefaultRoutingHandler) Handle(c interface{}, ctx *fasthttp.RequestCtx) 
 	if e != nil {
 		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
 		ctx.Response.SetBodyString("Bad Gateway")
+		log.Println(e)
 		return e
 	}
 	for k, v := range h.ResponseHeaders {
