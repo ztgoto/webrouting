@@ -14,14 +14,10 @@
 package cmd
 
 import (
-	"log"
-	"runtime"
-
 	"github.com/ztgoto/webrouting/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/ztgoto/webrouting/config"
-	"github.com/ztgoto/webrouting/http"
 )
 
 // startCmd represents the start command
@@ -31,18 +27,7 @@ var startCmd = &cobra.Command{
 	Long:  `start http routing server`,
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.PrintBanner()
-		err := config.LoadConf()
-		if err != nil {
-			panic(err)
-		}
-		log.Printf("%+v\n", config.AppConf)
 
-		runtime.GOMAXPROCS(config.AppConf.MaxProcs)
-		err = http.PrepareSetting()
-		if err != nil {
-			panic(err)
-		}
-		http.StartServer()
 	},
 }
 
