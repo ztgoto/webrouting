@@ -16,6 +16,7 @@ type ApplicationConfig struct {
 type UpstreamConfig struct {
 	ID      string
 	Balance string
+	Timeout int64
 	Server  []string
 }
 

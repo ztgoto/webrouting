@@ -1,6 +1,8 @@
 package httphandler
 
 import (
+	"log"
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -77,6 +79,10 @@ type Dispatch struct {
 
 // DoDispatch 处理器
 func (rd *Dispatch) DoDispatch(ctx *fasthttp.RequestCtx) {
+	httphost := string(ctx.Request.Host())
+	path := string(ctx.Path())
+	log.Printf("httphost:%s,uri:%s\n", httphost, path)
+
 	hec := rd.getHandler(ctx)
 
 	if hec == nil {
@@ -103,4 +109,3 @@ func (rd *Dispatch) getHandler(ctx *fasthttp.RequestCtx) *HandlerExecutionChain 
 	}
 	return nil
 }
-
