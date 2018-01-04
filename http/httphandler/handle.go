@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/valyala/fasthttp"
+	"github.com/ztgoto/webrouting/config"
 )
 
 // "bufio"
@@ -108,4 +109,19 @@ func (rd *Dispatch) getHandler(ctx *fasthttp.RequestCtx) *HandlerExecutionChain 
 		}
 	}
 	return nil
+}
+
+// NewDefaultDispathc 创建dispatch
+func NewDefaultDispathc(lc map[string][]*config.LocationConfig) *Dispatch {
+
+	return &Dispatch{
+		handlerMappings: []HandlerMapping{
+			&RoutingHandlerMapping{
+				LocConfig: lc,
+			},
+			&StaticFileHandlerMapping{
+				LocConfig: lc,
+			},
+		},
+	}
 }

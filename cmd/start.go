@@ -14,6 +14,10 @@
 package cmd
 
 import (
+	"log"
+	"runtime"
+
+	"github.com/ztgoto/webrouting/http"
 	"github.com/ztgoto/webrouting/utils"
 
 	"github.com/spf13/cobra"
@@ -27,7 +31,17 @@ var startCmd = &cobra.Command{
 	Long:  `start http routing server`,
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.PrintBanner()
+		e := config.LoadConfigFile()
+		if e != nil {
+			panic(e)
+		}
 
+		if config.GlobalConfig.Application.Processes <= 0 {
+			config.GlobalConfig.Application.Processes = runtime.NumCPU()
+		}
+		runtime.GOMAXPROCS(config.GlobalConfig.Application.Processes)
+		log.Printf("%+v\n", config.GlobalConfig)
+		http.StartServer()
 	},
 }
 

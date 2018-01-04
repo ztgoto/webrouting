@@ -53,7 +53,7 @@ func (rhm *RoutingHandlerMapping) GetHandler(ctx *fasthttp.RequestCtx) *HandlerE
 	rh, ok := rhm.handlerMap[hitlc]
 
 	if !ok {
-		proxy := hitlc.Proxy
+		proxy := hitlc.Upstream
 
 		if len(strings.TrimSpace(proxy)) == 0 {
 			return nil
@@ -99,8 +99,8 @@ func matchLocationConfig(lcs []*config.LocationConfig, path string) *config.Loca
 }
 
 func findUpstreamConfig(ucID string) *config.UpstreamConfig {
-	if config.GlobalConfig.Upstream != nil && len(config.GlobalConfig.Upstream) > 0 {
-		for _, v := range config.GlobalConfig.Upstream {
+	if config.GlobalConfig.Upstreams != nil && len(config.GlobalConfig.Upstreams) > 0 {
+		for _, v := range config.GlobalConfig.Upstreams {
 			if strings.TrimSpace(ucID) == strings.TrimSpace(v.ID) {
 				return &v
 			}
@@ -118,7 +118,7 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 
 	clients, ok := clientsMap[ucID]
 	if !ok {
-		servers := uc.Server
+		servers := uc.Servers
 		if servers == nil || len(servers) <= 0 {
 			panic("UpstreamConfig server list is empty")
 		}

@@ -2,28 +2,39 @@
 application:
   processes: 1  # runtime.GOMAXPROCS(processes)
 
-upstream:
+upstreams:
   - id: server1
     balance: random
-    server: [127.0.0.1:8080,127.0.0.1:8081,127.0.0.1:8082]
-  - id: server2
-    balance: random
-    server: [127.0.0.1:8083,127.0.0.1:8084]
+    servers: ["192.168.4.132:9119"]
+  # - id: server2
+  #   balance: random
+  #   servers: ["127.0.0.1:8083","127.0.0.1:8084"]
 
 # http 服务配置
 http:
-  server:
-    - listen: 80
-      server_name: 127.0.0.1
-      location:
-        - pattern: "/*"
-          proxy_pass: server1
-          request: {"head1": "m1"}
-          response: {"Server": "webrouting"}
-    - listen: 80
-      server_name: localhost
-      location:
-        - pattern: "/*"
-          proxy_pass: server1
-          request: {"head1": "m1"}
-          response: {"Server": "webrouting"}
+  servers:
+    # - listen: ":8080"
+    #   ssl: true
+    #   cert: "/aa/bb/cc/xx.cert"
+    #   key: "/aa/bb/cc/xx.key"
+    #   hosts:
+    #     - host: 127.0.0.1
+    #       locations:
+    #         - pattern: "/*"
+    #           upstream: server1
+    #           request: {"head1": "m1"}
+    #           response: {"Server": "webrouting"}
+    #     - host: localhost
+    #       locations:
+    #         - pattern: "/*"
+    #           upstream: server1
+    #           request: {"head1": "m1"}
+    #           response: {"Server": "webrouting"}
+    - listen: ":8081"
+      hosts:
+        - host: 127.0.0.1
+          locations:
+            - pattern: "/*"
+              upstream: server1
+              request: {"head1": "m1"}
+              response: {"Server": "webrouting"}

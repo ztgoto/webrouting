@@ -17,38 +17,43 @@ type UpstreamConfig struct {
 	ID      string
 	Balance string
 	Timeout int64
-	Server  []string
+	Servers []string
 }
 
 // LocationConfig 路由配置
 type LocationConfig struct {
 	Pattern  string
-	Proxy    string
+	Upstream string
 	Root     string
 	Index    string
 	Request  map[string]string
 	Response map[string]string
 }
 
+// HostMappingConfig host路由配置
+type HostMappingConfig struct {
+	Host      string
+	Locations []LocationConfig
+}
+
 // ServerConfig HTTP服务配置
 type ServerConfig struct {
-	Listen   string
-	Host     string
-	SSL      bool
-	Cert     string
-	Key      string
-	Location []LocationConfig
+	Listen string
+	SSL    bool
+	Cert   string
+	Key    string
+	Hosts  []HostMappingConfig
 }
 
 // HTTPConfig 全局Http配置
 type HTTPConfig struct {
-	Server []ServerConfig
+	Servers []ServerConfig
 }
 
 // Config 全局配置对象
 type Config struct {
 	Application ApplicationConfig
-	Upstream    []UpstreamConfig
+	Upstreams   []UpstreamConfig
 	HTTP        HTTPConfig
 }
 
@@ -76,8 +81,8 @@ func ParseConfig(in []byte) (app *Config, err error) {
 	return
 }
 
-// LoadFile 读取配置文件
-func LoadFile(path string) error {
+// LoadConfigFile 读取配置文件
+func LoadConfigFile() error {
 	content, err := ioutil.ReadFile(ConfPath)
 	if err != nil {
 		return err

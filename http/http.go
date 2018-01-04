@@ -3,7 +3,10 @@ package http
 import (
 	"log"
 	"net"
+	"strings"
 	"sync"
+
+	"github.com/ztgoto/webrouting/http/httphandler"
 
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
@@ -16,12 +19,25 @@ var (
 	ListenList map[string]net.Listener
 )
 
+// StartServer 启动服务
+func StartServer() {
+	w.Add(1)
+	initHTTPServer()
+	log.Println("http server start success!")
+	w.Wait()
+}
+
 func initHTTPServer() {
-	httpConfigList := &config.GlobalConfig.HTTP.Server
+	httpConfigList := &config.GlobalConfig.HTTP.Servers
+
 	if len(*httpConfigList) > 0 && ListenList == nil {
 		ListenList = make(map[string]net.Listener, len(*httpConfigList))
 	}
 	for _, v := range *httpConfigList {
+
+		hostMap := toHostMap(&v)
+		dispatch := httphandler.NewDefaultDispathc(hostMap)
+
 		listen := v.Listen
 		ssl := v.SSL
 		var ln net.Listener
@@ -29,20 +45,45 @@ func initHTTPServer() {
 		if ssl {
 			cert := v.Cert
 			key := v.Key
-			ln, err = createServerTLS(listen, cert, key, func(ctx *fasthttp.RequestCtx) {
-
-			})
+			ln, err = createServerTLS(listen, cert, key, dispatch.DoDispatch)
 
 		} else {
-			ln, err = createServer(listen, func(ctx *fasthttp.RequestCtx) {
-
-			})
+			ln, err = createServer(listen, dispatch.DoDispatch)
 		}
 		if err != nil {
 			panic(err)
 		}
 		ListenList[listen] = ln
+		log.Printf("http server start [%s]!\n", listen)
 	}
+}
+
+func toHostMap(server *config.ServerConfig) map[string][]*config.LocationConfig {
+	listen := server.Listen
+	hosts := server.Hosts
+	if hosts != nil && len(hosts) > 0 {
+		hm := make(map[string][]*config.LocationConfig, 32)
+		for _, v := range hosts {
+			host := strings.TrimSpace(v.Host)
+			if len(host) <= 0 {
+				continue
+			}
+
+			if _, ok := hm[host]; ok {
+				log.Printf("listen:%s,host:%s,conflicting ignored", listen, host)
+				continue
+			}
+			if v.Locations != nil && len(v.Locations) > 0 {
+				lcs := make([]*config.LocationConfig, len(v.Locations))
+				for i, loc := range v.Locations {
+					lcs[i] = &loc
+				}
+				hm[host] = lcs
+			}
+		}
+		return hm
+	}
+	return nil
 }
 
 // 创建http服务器
