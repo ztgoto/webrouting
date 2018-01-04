@@ -21,10 +21,25 @@ var (
 
 // StartServer 启动服务
 func StartServer() {
-	w.Add(1)
+
 	initHTTPServer()
 	log.Println("http server start success!")
+	select {
+	case <-config.CloseSignal:
+		log.Println("---close server---")
+		CloseServer()
+	}
 	w.Wait()
+	log.Println("---all closed---")
+}
+
+// CloseServer 关闭服务
+func CloseServer() {
+	if ListenList != nil && len(ListenList) > 0 {
+		for _, v := range ListenList {
+			v.Close()
+		}
+	}
 }
 
 func initHTTPServer() {
@@ -94,7 +109,10 @@ func createServer(addr string, handler fasthttp.RequestHandler) (ln net.Listener
 	}
 
 	go func() {
+		w.Add(1)
 		e := fasthttp.Serve(ln, handler)
+		w.Done()
+		log.Printf("http server[%s] closed!", addr)
 		if e != nil {
 			panic(e)
 		}
@@ -111,7 +129,10 @@ func createServerTLS(addr, cert, key string, handler fasthttp.RequestHandler) (l
 	}
 
 	go func() {
+		w.Add(1)
 		e := fasthttp.ServeTLS(ln, cert, key, handler)
+		w.Done()
+		log.Printf("http server[%s] closed!", addr)
 		if e != nil {
 			panic(e)
 		}

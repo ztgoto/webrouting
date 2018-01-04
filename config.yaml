@@ -13,17 +13,18 @@ upstreams:
 # http 服务配置
 http:
   servers:
-    # - listen: ":8080"
-    #   ssl: true
-    #   cert: "/aa/bb/cc/xx.cert"
-    #   key: "/aa/bb/cc/xx.key"
-    #   hosts:
-    #     - host: 127.0.0.1
-    #       locations:
-    #         - pattern: "/*"
-    #           upstream: server1
-    #           request: {"head1": "m1"}
-    #           response: {"Server": "webrouting"}
+    - listen: ":8080"
+      # ssl: true
+      # cert: "/aa/bb/cc/xx.cert"
+      # key: "/aa/bb/cc/xx.key"
+      hosts:
+        - host: 127.0.0.1
+          locations:
+            - pattern: "/*"
+              root: "/html"
+              index: "index.html"
+              request: {"head1": "m1"}
+              response: {"Server": "webrouting"}
     #     - host: localhost
     #       locations:
     #         - pattern: "/*"

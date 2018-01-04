@@ -2,7 +2,10 @@ package config
 
 import (
 	"io/ioutil"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 
 	"gopkg.in/yaml.v2"
 )
@@ -68,10 +71,16 @@ var (
 
 	// ConfPath 配置文件路径
 	ConfPath = DefaultConfPath
+
+	// CloseSignal 关闭信号
+	CloseSignal = make(chan os.Signal)
 )
 
 func init() {
 	GlobalConfig.Application.Processes = runtime.NumCPU()
+
+	// 注册关闭信号监听
+	signal.Notify(CloseSignal, syscall.SIGINT, syscall.SIGTERM)
 }
 
 // ParseConfig 解析Application配置
