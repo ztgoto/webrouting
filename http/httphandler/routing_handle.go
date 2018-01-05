@@ -135,6 +135,7 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 				WriteTimeout: 5 * time.Second,
 				// ReadBufferSize: *outMaxHeaderSize,
 			}
+			log.Printf("create client:%s\n", v)
 		}
 		clientsMap[ucID] = clients
 
@@ -151,7 +152,7 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 	if uc.Timeout > 0 {
 		timeout = time.Duration(uc.Timeout) * time.Millisecond
 	}
-
+	log.Println("create RoutingHandler")
 	return &RoutingHandler{
 		Clients: clients,
 		Balance: balance,
@@ -275,7 +276,7 @@ func NewDefaultFileHandler(lc *config.LocationConfig) *DefaultFileHandler {
 		Compress:           false,
 		AcceptByteRange:    false,
 	}
-
+	log.Println("create DefaultFileHandler")
 	return &DefaultFileHandler{
 		handler: fs.NewRequestHandler(),
 		lc:      lc,
