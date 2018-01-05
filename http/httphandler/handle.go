@@ -1,8 +1,6 @@
 package httphandler
 
 import (
-	"log"
-
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
 )
@@ -80,9 +78,9 @@ type Dispatch struct {
 
 // DoDispatch 处理器
 func (rd *Dispatch) DoDispatch(ctx *fasthttp.RequestCtx) {
-	httphost := string(ctx.Request.Host())
-	path := string(ctx.Path())
-	log.Printf("httphost:%s,uri:%s\n", httphost, path)
+	// httphost := string(ctx.Request.Host())
+	// path := string(ctx.Path())
+	// log.Printf("httphost:%s,uri:%s\n", httphost, path)
 
 	hec := rd.getHandler(ctx)
 

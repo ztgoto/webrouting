@@ -2,7 +2,6 @@ package httphandler
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -135,7 +134,7 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 				WriteTimeout: 5 * time.Second,
 				// ReadBufferSize: *outMaxHeaderSize,
 			}
-			log.Printf("create client:%s\n", v)
+			// log.Printf("create client:%s\n", v)
 		}
 		clientsMap[ucID] = clients
 
@@ -152,7 +151,7 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 	if uc.Timeout > 0 {
 		timeout = time.Duration(uc.Timeout) * time.Millisecond
 	}
-	log.Println("create RoutingHandler")
+	// log.Println("create RoutingHandler")
 	return &RoutingHandler{
 		Clients: clients,
 		Balance: balance,
@@ -207,7 +206,7 @@ func (rh *RoutingHandler) Handle(ctx *fasthttp.RequestCtx) {
 	if e != nil {
 		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
 		ctx.Response.SetBodyString("Bad Gateway")
-		log.Println(e)
+		// log.Println(e)
 		return
 	}
 }
@@ -276,7 +275,7 @@ func NewDefaultFileHandler(lc *config.LocationConfig) *DefaultFileHandler {
 		Compress:           false,
 		AcceptByteRange:    false,
 	}
-	log.Println("create DefaultFileHandler")
+	// log.Println("create RoutingHandler")
 	return &DefaultFileHandler{
 		handler: fs.NewRequestHandler(),
 		lc:      lc,
