@@ -5,7 +5,7 @@ application:
 upstreams:
   - id: server1
     balance: random
-    servers: ["192.168.4.132:9119;3000"] # 后端服务列表,每个地址格式 host[:port][;MaxConnections]
+    servers: ["192.168.2.115:8140;1000","192.168.2.116:8140;2000"] # 后端服务列表,每个地址格式 host[:port][;MaxConnections]
   # - id: server2
   #   balance: random
   #   servers: ["127.0.0.1:8083","127.0.0.1:8084"]
@@ -13,18 +13,18 @@ upstreams:
 # http 服务配置
 http:
   servers:
-    - listen: ":8080"
+    # - listen: ":8080"
       # ssl: true
       # cert: "/aa/bb/cc/xx.cert"
       # key: "/aa/bb/cc/xx.key"
-      hosts:
-        - host: 127.0.0.1
-          locations:
-            - pattern: "/*"
-              root: "/html"
-              index: "index.html"
-              request: {"head1": "m1"}
-              response: {"Server": "webrouting"}
+      # hosts:
+      #   - host: 127.0.0.1
+      #     locations:
+      #       - pattern: "/*"
+      #         root: "/html"
+      #         index: "index.html"
+      #         request: {"head1": "m1"}
+      #         response: {"Server": "webrouting"}
     #     - host: localhost
     #       locations:
     #         - pattern: "/*"
@@ -33,7 +33,7 @@ http:
     #           response: {"Server": "webrouting"}
     - listen: ":8081"
       hosts:
-        - host: 127.0.0.1
+        - host: 192.168.2.115
           locations:
             - pattern: "/*"
               upstream: server1

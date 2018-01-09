@@ -3,7 +3,6 @@ package httphandler
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,7 +16,7 @@ import (
 var (
 	// RegexpCache 正则匹配缓存对象
 	RegexpCache = utils.NewConcurrentMap(32)
-	clientsMap  = make(map[string][]*fasthttp.HostClient, 32)
+	clientsMap  = make(map[string]*fasthttp.LBClient, 32)
 )
 
 // RoutingHandlerMapping 反向代理请求映射
@@ -117,14 +116,14 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 		panic("UpstreamConfig ID is empty")
 	}
 
-	clients, ok := clientsMap[ucID]
+	lbcClient, ok := clientsMap[ucID]
 	if !ok {
 		servers := uc.Servers
 		if servers == nil || len(servers) <= 0 {
 			panic("UpstreamConfig server list is empty")
 		}
 
-		clients = make([]*fasthttp.HostClient, len(servers))
+		clients := make([]fasthttp.BalancingClient, len(servers))
 
 		// 此处配置还需要细化
 		for i, v := range servers {
@@ -152,7 +151,17 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 			}
 			log.Printf("create client:%s,%d\n", addr, maxConns)
 		}
-		clientsMap[ucID] = clients
+		lbcClient = &fasthttp.LBClient{
+			Clients: clients,
+			// HealthCheck: func(req *fasthttp.Request, resp *fasthttp.Response, err error) bool {
+			// 	if err != nil {
+			// 		log.Println(err)
+			// 		return false
+			// 	}
+			// 	return true
+			// },
+		}
+		clientsMap[ucID] = lbcClient
 
 	}
 
@@ -169,33 +178,27 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 	}
 	// log.Println("create RoutingHandler")
 	return &RoutingHandler{
-		Clients: clients,
-		Balance: balance,
-		Timeout: timeout,
-		lc:      lc,
+		lbClient: lbcClient,
+		Balance:  balance,
+		Timeout:  timeout,
+		lc:       lc,
 	}
 }
 
 // RoutingHandler 反向代理处理器
 type RoutingHandler struct {
-	Clients []*fasthttp.HostClient
-	Balance string
-	Timeout time.Duration
-	lc      *config.LocationConfig
+	lbClient *fasthttp.LBClient
+	Balance  string
+	Timeout  time.Duration
+	lc       *config.LocationConfig
 }
 
 // Handle 反向代理处理器
 func (rh *RoutingHandler) Handle(ctx *fasthttp.RequestCtx) {
-	if rh.Clients == nil || len(rh.Clients) <= 0 {
+	if rh.lbClient == nil {
 		return
 	}
-	client := rh.Clients[0]
-	balance := rh.Balance
-	if balance == "random" {
-		l := len(rh.Clients)
-		index := rand.Intn(l)
-		client = rh.Clients[index]
-	}
+	client := rh.lbClient
 
 	timeout := 30000 * time.Millisecond
 
@@ -222,9 +225,8 @@ func (rh *RoutingHandler) Handle(ctx *fasthttp.RequestCtx) {
 	if e != nil {
 		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
 		ctx.Response.SetBodyString("Bad Gateway")
-		// log.Println(e)
-		return
 	}
+	// ctx.ResetBody()
 }
 
 // StaticFileHandlerMapping 静态文件服务请求映射
