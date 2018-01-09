@@ -2,8 +2,10 @@ package httphandler
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -126,15 +128,29 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 
 		// 此处配置还需要细化
 		for i, v := range servers {
+			cfStr := strings.TrimSpace(v)
+			if len(cfStr) == 0 {
+				continue
+			}
+			cf := strings.Split(cfStr, ";")
+
+			addr := cf[0]
+			maxConns := config.DefaultClientMaxConnCount
+			if len(cf) > 1 && len(strings.TrimSpace(cf[1])) > 0 {
+				c, e := strconv.Atoi(strings.TrimSpace(cf[1]))
+				if e == nil && c > 0 {
+					maxConns = c
+				}
+			}
 			clients[i] = &fasthttp.HostClient{
-				Addr:         v,
+				Addr:         addr,
 				Dial:         fasthttp.Dial,
-				MaxConns:     config.DefaultClientMaxConnCount,
+				MaxConns:     maxConns,
 				ReadTimeout:  120 * time.Second,
 				WriteTimeout: 5 * time.Second,
 				// ReadBufferSize: *outMaxHeaderSize,
 			}
-			// log.Printf("create client:%s\n", v)
+			log.Printf("create client:%s,%d\n", addr, maxConns)
 		}
 		clientsMap[ucID] = clients
 

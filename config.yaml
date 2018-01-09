@@ -5,7 +5,7 @@ application:
 upstreams:
   - id: server1
     balance: random
-    servers: ["192.168.4.132:9119"]
+    servers: ["192.168.4.132:9119;3000"] # 后端服务列表,每个地址格式 host[:port][;MaxConnections]
   # - id: server2
   #   balance: random
   #   servers: ["127.0.0.1:8083","127.0.0.1:8084"]
