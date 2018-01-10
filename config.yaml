@@ -1,11 +1,11 @@
 # 系统配置
 application:
-  processes: 1  # runtime.GOMAXPROCS(processes)
+  processes: 1  # runtime.GOMAXPROCS(processes) 不填或小于等于0则默认为cpu核心数
 
 upstreams:
   - id: server1
     balance: random
-    servers: ["192.168.2.115:8140;1000"] # 后端服务列表,每个地址格式 host[:port][;MaxConnections]
+    servers: ["127.0.0.1:8140;1000"] # 后端服务列表,每个地址格式 host[:port][;MaxConnections]
   # - id: server2
   #   balance: random
   #   servers: ["127.0.0.1:8083","127.0.0.1:8084"]
@@ -33,7 +33,7 @@ http:
     #           response: {"Server": "webrouting"}
     - listen: ":8081"
       hosts:
-        - host: 192.168.2.115
+        - host: loclhost
           locations:
             - pattern: "/*"
               upstream: server1
