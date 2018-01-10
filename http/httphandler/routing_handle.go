@@ -10,6 +10,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 	"github.com/ztgoto/webrouting/config"
+	"github.com/ztgoto/webrouting/http/client"
 	"github.com/ztgoto/webrouting/utils"
 )
 
@@ -141,13 +142,15 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 					maxConns = c
 				}
 			}
-			clients[i] = &fasthttp.HostClient{
-				Addr:         addr,
-				Dial:         fasthttp.Dial,
-				MaxConns:     maxConns,
-				ReadTimeout:  120 * time.Second,
-				WriteTimeout: 5 * time.Second,
-				// ReadBufferSize: *outMaxHeaderSize,
+			clients[i] = &client.BaseClient{
+				HostClient: fasthttp.HostClient{
+					Addr:         addr,
+					Dial:         fasthttp.Dial,
+					MaxConns:     maxConns,
+					ReadTimeout:  120 * time.Second,
+					WriteTimeout: 5 * time.Second,
+					// ReadBufferSize: *outMaxHeaderSize,
+				},
 			}
 			log.Printf("create client:%s,%d\n", addr, maxConns)
 		}
@@ -214,7 +217,7 @@ func (rh *RoutingHandler) Handle(ctx *fasthttp.RequestCtx) {
 		}
 	}
 
-	e := client.DoTimeout(&ctx.Request, &ctx.Response, timeout*time.Millisecond)
+	e := client.DoTimeout(&ctx.Request, &ctx.Response, timeout)
 
 	if rh.lc != nil && rh.lc.Response != nil && len(rh.lc.Response) > 0 {
 		for k, v := range rh.lc.Response {
