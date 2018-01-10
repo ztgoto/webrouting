@@ -62,7 +62,7 @@ type Config struct {
 
 const (
 	// DefaultConfPath 默认配置文件路径
-	DefaultConfPath = "./conf/webrouting.conf"
+	DefaultConfPath = "./config.yaml"
 )
 
 var (
