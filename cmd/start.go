@@ -14,7 +14,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 	"runtime"
 
 	"github.com/ztgoto/webrouting/http"
@@ -40,7 +40,8 @@ var startCmd = &cobra.Command{
 			config.GlobalConfig.Application.Processes = runtime.NumCPU()
 		}
 		runtime.GOMAXPROCS(config.GlobalConfig.Application.Processes)
-		log.Printf("%+v\n", config.GlobalConfig)
+		config.InitDefaultLog()
+		config.DefaultLogger.Info(fmt.Sprintf("%+v", config.GlobalConfig))
 		http.StartServer()
 	},
 }

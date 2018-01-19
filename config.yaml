@@ -12,6 +12,8 @@ upstreams:
 
 # http 服务配置
 http:
+  logLevel: "info"
+  logPath: "./logs/test.log"
   servers:
     # - listen: ":8080"
       # ssl: true

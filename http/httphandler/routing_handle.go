@@ -2,7 +2,6 @@ package httphandler
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -152,7 +151,7 @@ func NewRoutingHandler(lc *config.LocationConfig, uc *config.UpstreamConfig) *Ro
 					// ReadBufferSize: *outMaxHeaderSize,
 				},
 			}
-			log.Printf("create client:%s,%d\n", addr, maxConns)
+			config.DefaultLogger.Info(fmt.Sprintf("create client:%s,%d\n", addr, maxConns))
 		}
 		lbcClient = &fasthttp.LBClient{
 			Clients: clients,
@@ -228,6 +227,7 @@ func (rh *RoutingHandler) Handle(ctx *fasthttp.RequestCtx) {
 	if e != nil {
 		ctx.Response.SetStatusCode(config.HTTPStatusBadGateway)
 		ctx.Response.SetBodyString("Bad Gateway")
+		config.DefaultLogger.Error(fmt.Sprint(e))
 	}
 	// ctx.ResetBody()
 }

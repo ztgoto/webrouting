@@ -1,7 +1,7 @@
 package http
 
 import (
-	"log"
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -23,14 +23,14 @@ var (
 func StartServer() {
 
 	initHTTPServer()
-	log.Println("http server start success!")
+	config.DefaultLogger.Info("http server start success!")
 	select {
 	case <-config.CloseSignal:
-		log.Println("---close server---")
+		config.DefaultLogger.Info("---close server---")
 		CloseServer()
 	}
 	w.Wait()
-	log.Println("---all closed---")
+	config.DefaultLogger.Info("---all closed---")
 }
 
 // CloseServer 关闭服务
@@ -40,6 +40,7 @@ func CloseServer() {
 			v.Close()
 		}
 	}
+	config.DefaultLogger.Sync()
 }
 
 func initHTTPServer() {
@@ -69,7 +70,7 @@ func initHTTPServer() {
 			panic(err)
 		}
 		ListenList[listen] = ln
-		log.Printf("http server start [%s]!\n", listen)
+		config.DefaultLogger.Info(fmt.Sprintf("http server start [%s]!", listen))
 	}
 }
 
@@ -85,7 +86,7 @@ func toHostMap(server *config.ServerConfig) map[string][]*config.LocationConfig 
 			}
 
 			if _, ok := hm[host]; ok {
-				log.Printf("listen:%s,host:%s,conflicting ignored", listen, host)
+				config.DefaultLogger.Info(fmt.Sprintf("listen:%s,host:%s,conflicting ignored", listen, host))
 				continue
 			}
 			if v.Locations != nil && len(v.Locations) > 0 {
@@ -112,12 +113,12 @@ func createServer(addr string, handler fasthttp.RequestHandler) (ln net.Listener
 		w.Add(1)
 		e := fasthttp.Serve(ln, handler)
 		w.Done()
-		log.Printf("http server[%s] closed!", addr)
+		config.DefaultLogger.Info(fmt.Sprintf("http server[%s] closed!", addr))
 		if e != nil {
 			panic(e)
 		}
 	}()
-	log.Printf("create Listen [%s]\n", addr)
+	config.DefaultLogger.Info(fmt.Sprintf("create Listen [%s]", addr))
 	return
 }
 
@@ -132,11 +133,11 @@ func createServerTLS(addr, cert, key string, handler fasthttp.RequestHandler) (l
 		w.Add(1)
 		e := fasthttp.ServeTLS(ln, cert, key, handler)
 		w.Done()
-		log.Printf("http server[%s] closed!", addr)
+		config.DefaultLogger.Info(fmt.Sprintf("https server[%s] closed!", addr))
 		if e != nil {
 			panic(e)
 		}
 	}()
-	log.Printf("create Listen [%s]\n", addr)
+	config.DefaultLogger.Info(fmt.Sprintf("create Listen [%s]\n", addr))
 	return
 }

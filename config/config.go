@@ -50,7 +50,9 @@ type ServerConfig struct {
 
 // HTTPConfig 全局Http配置
 type HTTPConfig struct {
-	Servers []ServerConfig
+	LogLevel string `yaml:"logLevel"`
+	LogPath  string `yaml:"logPath"`
+	Servers  []ServerConfig
 }
 
 // Config 全局配置对象
